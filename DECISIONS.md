@@ -12,7 +12,8 @@ Choices made without asking, and why.
 - **No sound files.** The alarm sounds (chime, beep, marimba, bells) are synthesised with WebAudio in `pet/sounds.ts`. There are no licences to track. "System default" uses the OS notification sound.
 
 ## Architecture
-- **Chat bubble lives inside the overlay window.** One transparent window hit-tests every element marked `[data-hit]` (pet, speech bubble, chat panel). The window is clickable only while the cursor is over one of them; everywhere else clicks pass through. A separate chat window would need its own positioning sync with a moving pet and its own focus dance. Opening the chat calls `focus()` so typing works. Clicking another app blurs the window, and blur closes the chat ("click outside").
+- **Chat bubble lives inside the overlay window.** One transparent window holds the pet, speech bubble and chat panel. A separate chat window would need its own positioning sync with a moving pet and its own focus dance. Opening the chat calls `focus()` so typing works. The DOM `blur` event (clicking another app) closes it, and so does Esc.
+- **Click-through by cursor polling, not `forward: true`.** The overlay ignores the mouse. The renderer reports the rectangles of the pet and its bubbles, and main polls `screen.getCursorScreenPoint()` at 10 Hz, making the window clickable only while the cursor is inside one of them (held during a drag). The first version used `setIgnoreMouseEvents(true, { forward: true })` with renderer hit-testing. Measurement showed that design delivers every desktop mouse move to the overlay, and each one recomposites the full-screen transparent window: about 15% of a core whenever the mouse moved.
 - **One IPC channel.** Preload exposes `invoke(channel, payload)` plus two event streams. Main keeps a whitelist map of zod schemas (`shared/ipc.ts`) and rejects unknown channels and invalid payloads. The preload imports types only, so zod never loads in the sandboxed preload.
 - **Scheduler = "next fire per item" + `replan()` on every change.** Rather than updating jobs incrementally, any `changed` event on the bus cancels and recomputes all jobs. With a personal-sized dataset this costs microseconds and can't drift out of sync. All time math is pure functions in `shared/schedule.ts` and is unit-tested, including DST (America/New_York).
 - **Sleep/resume.** On `suspend`, every job is cancelled. On `resume` (and on app start), a single "You missed…" summary covers alarms and events that should have fired since the last heartbeat (at most 12 h back). A heartbeat is written every minute. A job that fires more than 2 min late becomes a missed entry instead of ringing.
@@ -21,7 +22,9 @@ Choices made without asking, and why.
 - **"Pause reminders" (tray) pauses water reminders only.** Alarms and meeting reminders keep working, because silently skipping a meeting reminder would be worse than an extra nudge.
 - **Alarm snoozes are in memory.** If the app restarts mid-snooze, the snooze is lost. The alarm's next regular occurrence is unaffected.
 - **Streak uses the current goal** for past days (goals aren't versioned) and is capped at 366 days.
-- **"Inactivity" for the pet's sleep** means no mouse movement over the desktop for 10 minutes. The overlay receives forwarded mouse moves anyway, so this costs nothing and needs no system idle polling.
+- **"Inactivity" for the pet's sleep** comes from `powerMonitor.getSystemIdleTime()` (keyboard and mouse), sent to the pet every 10 s. After 10 idle minutes it sleeps, and the next activity wakes it.
+- **Idle CPU budget.** Every animated frame recomposites the whole full-screen transparent overlay, so idle cost scales with animated time. Idle motion is therefore short bursts: a 0.3 s blink every ~4.5 s and a breath every 4th time, not infinite CSS loops. Wandering averages one walk per 30 s idle, ±200 px. The loop uses rAF only while something moves and a 2 Hz timer otherwise, and writes styles only when they change. Measured in dev on this machine, idle went from 16.5% to 2.6% of one core (≈0.13% of the CPU).
+- **Pet cues are queued until the pet UI is listening.** The startup "You missed…" summary was being sent before React had subscribed, so it was lost. The pet now sends `pet:ready` and main flushes the queue.
 - **Deletes from the AI need confirmation; deletes in the dashboard use a native confirm dialog.** Both paths go through the same services.
 - **Chat history sent to Gemini is text only** (last N messages, default 20). Tool call details are stored in `chat_history.tool_calls_json` for reference but not replayed. The per-request system prompt already carries the current events, alarms and IDs.
 
@@ -29,6 +32,12 @@ Choices made without asking, and why.
 - Uses a single long-lived hidden PowerShell process that polls `SHQueryUserNotificationState` every 3 s. This is the signal Windows itself uses to suppress toasts for games, full-screen video and presentations. No native modules are needed.
 - **Meeting detection:** Zoom only, by checking for its `CptHost` process, which exists only during a meeting. Teams and Meet (browser) have no reliable cheap signal, so they're skipped.
 - **Self-detection bug found and fixed:** with an auto-hidden taskbar, the overlay covers the whole monitor, so Windows reported *our own* overlay as a full-screen app. SipPal hid itself, the signal cleared, it re-appeared, and the cycle repeated. Two fixes: the overlay is 1 px shorter than the work area, and readings are ignored while a SipPal window is in the foreground.
+
+## Bugs found by testing (and fixed)
+- One-off events were never scheduled: the "infinite" search horizon (`8.64e15`) plus the reminder offset overflowed JS's maximum Date and became `Invalid Date`. A unit test caught it.
+- zod 4's `.partial()` still applies `.default()`s, so any partial update (e.g. disabling a fired once-alarm) silently reset untouched fields such as `snooze_min` and `sound` (and `remind_before`/`recurrence` for events). Patch schemas are now built from default-free fields, with a regression test.
+- The prompt line `Current ISO: …+05:30.` invited a model to copy the trailing period into the offset. The ISO is now on its own line.
+- ICU reports `Asia/Calcutta`; it is normalised to `Asia/Kolkata`.
 
 ## Voice
 - **Push-to-talk via Gemini transcription.** `MediaRecorder` records WebM/Opus, which isn't on Gemini's supported audio list, so the renderer decodes it and re-encodes it as 16 kHz mono WAV (`common/voice.ts`, no dependencies). Main sends it to the configured model with a "transcribe exactly" instruction, and the transcript becomes the chat message. Web Speech recognition isn't used because Electron doesn't include Google's speech backend.

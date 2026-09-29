@@ -10,7 +10,6 @@
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "postinstall": "electron-builder install-app-deps",
     "dist": "npm run build && electron-builder --win nsis",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
@@ -82,6 +81,7 @@
     "linux": {
       "target": "AppImage",
       "category": "Utility"
-    }
+    },
+    "npmRebuild": false
   }
 }
