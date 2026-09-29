@@ -12,7 +12,7 @@ import { exportAll, importAll, notifyAll, wipe } from './services/data'
 import { hasApiKey, setApiKey } from './secret'
 import { confirmPending, sendMessage, testKey, transcribe } from './ai/assistant'
 import { respondAlarm, snoozeWater, waterNotification } from './scheduler'
-import { focusPet, setPetClickable, showDashboard } from './windows'
+import { focusPet, markPetReady, setHitRects, setPetHold, setTrackCursor, showDashboard } from './windows'
 
 const publicSettings = (): PublicSettings => {
   const s = getSettings()
@@ -50,7 +50,10 @@ const handlers: Handlers = {
     notifyAll()
   },
   'ai:testKey': () => testKey(),
-  'pet:clickable': (p) => setPetClickable(p),
+  'pet:ready': () => markPetReady(),
+  'pet:hold': (p) => setPetHold(p),
+  'pet:hitRects': (p) => setHitRects(p),
+  'pet:trackCursor': (p) => setTrackCursor(p),
   'pet:focus': (p) => focusPet(p),
   'pet:contextMenu': (_p, e) => {
     const s = getSettings()

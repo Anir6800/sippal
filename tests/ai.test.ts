@@ -89,6 +89,19 @@ describe('tool handlers', () => {
   })
 })
 
+describe('partial updates', () => {
+  it('leave untouched fields alone', () => {
+    executeTool('create_event', { title: 'MERN', start_iso: inHours(2), remind_before_minutes: [30, 0], recurrence: 'weekly' }, [])
+    const id = listEvents()[0].id
+    executeTool('update_event', { event_id: id, title: 'MERN sync' }, [])
+    expect(listEvents()[0]).toMatchObject({ title: 'MERN sync', remind_before: [30, 0], recurrence: 'weekly' })
+    executeTool('create_alarm', { label: 'Tea', time_hh_mm: '16:00', repeat: 'daily', sound: 'bells' }, [])
+    const a = listAlarms()[0]
+    executeTool('update_alarm', { alarm_id: a.id, enabled: false }, [])
+    expect(listAlarms()[0]).toMatchObject({ enabled: false, sound: 'bells', repeat: 'daily', snooze_min: 5 })
+  })
+})
+
 describe('tool loop', () => {
   it('executes calls, returns function responses, then finishes with text', async () => {
     const turns: ModelTurn[] = [
@@ -128,6 +141,7 @@ describe('system prompt', () => {
     })
     expect(p).toContain('Aniruddh')
     expect(p).toContain('Asia/Kolkata (UTC+05:30)')
+    expect(p).toMatch(/Current ISO: \S+\+05:30\n/) // no trailing punctuation glued to the offset
     expect(p).toMatch(/#\d+ \| MERN stack meeting/)
     expect(p).toContain('750 / 2500 ml')
     expect(p).toContain('Never invent ids')

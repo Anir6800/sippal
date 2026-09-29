@@ -19,7 +19,7 @@ export type PetEvent =
 export const MAX_LEVEL = 3
 export const SLEEP_AFTER_MS = 10 * 60_000
 const CELEBRATE_MS = 3200
-const MEAN_IDLE_MS = 9000
+const MEAN_IDLE_MS = 30_000
 
 export const initialFsm = (now: number): Fsm => ({ state: 'idle', since: now, level: 0, resume: null, lastActivity: now, alertTimeout: null })
 

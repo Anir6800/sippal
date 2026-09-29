@@ -42,7 +42,10 @@ export const requests = {
   'ai:transcribe': z.object({ wavBase64: z.string().min(1).max(8_000_000) }),
   'ai:setKey': z.object({ key: z.string().trim().max(200) }),
   'ai:testKey': none,
-  'pet:clickable': z.boolean(),
+  'pet:ready': none,
+  'pet:hold': z.boolean(),
+  'pet:hitRects': z.array(z.object({ x: z.number(), y: z.number(), w: z.number().min(0), h: z.number().min(0) })).max(8),
+  'pet:trackCursor': z.boolean(),
   'pet:focus': z.boolean(),
   'pet:contextMenu': none,
   'pet:thirstyIgnored': z.object({ level: z.number().int().min(0).max(10) }),
@@ -84,7 +87,10 @@ export interface Responses {
   'ai:transcribe': { ok: true; text: string } | { ok: false; message: string }
   'ai:setKey': void
   'ai:testKey': { ok: boolean; message: string }
-  'pet:clickable': void
+  'pet:ready': void
+  'pet:hold': void
+  'pet:hitRects': void
+  'pet:trackCursor': void
   'pet:focus': void
   'pet:contextMenu': void
   'pet:thirstyIgnored': void

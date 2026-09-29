@@ -40,10 +40,8 @@ export function Pet(): JSX.Element | null {
   const bubbleRef = useRef<HTMLDivElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const kickRef = useRef<() => void>(() => undefined)
-  const clickable = useRef(false)
   const down = useRef<{ x: number; y: number; dragging: boolean } | null>(null)
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastPoke = useRef(0)
   const m = useRef<Model>({ x: innerWidth - 200, y: innerHeight, vy: 0, facing: -1, targetX: 0, cursorX: 0, cursorY: 0, dragOffX: 0, dragOffY: 0 }).current
 
   const cueRef = useRef(cue)
@@ -62,9 +60,11 @@ export function Pet(): JSX.Element | null {
     fsmRef.current = next
     setFsm(next)
     if (next.state === prev.state && next.level === prev.level) return
-    if (next.state === 'wander') m.targetX = Math.max(0, Math.min(innerWidth - size, m.x + (Math.random() * 2 - 1) * 420))
+    if (next.state === 'wander') m.targetX = Math.max(0, Math.min(innerWidth - size, m.x + (Math.random() * 2 - 1) * 200))
     if (next.state === 'escalate' && next.level !== prev.level) void api.invoke('pet:thirstyIgnored', { level: next.level })
     if (prev.state === 'alert' && next.state !== 'alert') stopAlarm()
+    const chasing = (s: string): boolean => s === 'thirsty' || s === 'escalate'
+    if (chasing(next.state) !== chasing(prev.state)) void api.invoke('pet:trackCursor', chasing(next.state))
     kickRef.current()
   }, [m, size])
 
@@ -121,25 +121,50 @@ export function Pet(): JSX.Element | null {
       return moving
     }
 
+    // Only touch styles when a value actually changes: every write costs a composited frame.
+    const setT = (el: HTMLElement, v: string): void => {
+      if (el.style.transform !== v) el.style.transform = v
+    }
     const apply = (): void => {
       const el = petRef.current
       if (!el) return
-      el.style.transform = `translate3d(${m.x}px, ${m.y}px, 0)`
+      setT(el, `translate3d(${m.x}px, ${m.y}px, 0px)`)
       const sz = settingsRef.current?.petSize ?? 100
       const b = bubbleRef.current
       if (b) {
         // Keep the bubble on screen: shift it horizontally relative to the pet.
         const w = b.offsetWidth
         const left = Math.max(8, Math.min(innerWidth - w - 8, m.x + sz / 2 - w / 2))
-        b.style.transform = `translateX(${left - m.x}px)`
+        setT(b, `translateX(${left - m.x}px)`)
       }
       const c = chatRef.current
       if (c) {
         const right = m.x + sz + CHAT_W + 16 < innerWidth
         const left = right ? sz + 8 : -CHAT_W - 8
         const top = Math.max(8, m.y + sz * 1.1 - CHAT_H) - m.y
-        c.style.transform = `translate(${left}px, ${top}px)`
+        setT(c, `translate(${left}px, ${top}px)`)
       }
+      reportHitRects(sz)
+    }
+
+    // Tell main where the clickable parts are (throttled; the final position always lands
+    // because the loop keeps ticking at 2 Hz once movement stops).
+    let lastKey = ''
+    let lastSent = 0
+    const reportHitRects = (sz: number): void => {
+      const rects = [{ x: m.x, y: m.y, w: sz, h: sz * 1.1 }]
+      for (const el of [bubbleRef.current, chatRef.current]) {
+        if (!el) continue
+        const r = el.getBoundingClientRect()
+        rects.push({ x: r.x, y: r.y, w: r.width, h: r.height })
+      }
+      const rounded = rects.map((r) => ({ x: Math.round(r.x - 4), y: Math.round(r.y - 4), w: Math.round(r.w + 8), h: Math.round(r.h + 8) }))
+      const key = JSON.stringify(rounded)
+      const now = performance.now()
+      if (key === lastKey || now - lastSent < 100) return
+      lastKey = key
+      lastSent = now
+      void api.invoke('pet:hitRects', rounded)
     }
 
     const frame = (): void => {
@@ -181,13 +206,28 @@ export function Pet(): JSX.Element | null {
     }
   }, [dispatch, m, hidden])
 
+  // Ambient micro-animation bursts (see pet.css): a blink every ~4.5 s, a breath every 4th time.
+  useEffect(() => {
+    if (hidden) return
+    let n = 0
+    let off: ReturnType<typeof setTimeout>
+    const t = setInterval(() => {
+      const cls = ++n % 4 ? 'blink' : 'breath'
+      petRef.current?.classList.add(cls)
+      off = setTimeout(() => petRef.current?.classList.remove(cls), cls === 'blink' ? 320 : 1350)
+    }, 4500)
+    return () => {
+      clearInterval(t)
+      clearTimeout(off)
+    }
+  }, [hidden])
+
   // Re-position bubbles immediately when they appear.
   useLayoutEffect(() => kickRef.current(), [fsm.state, chatOpen, cue])
 
   // ---------- messages from main ----------
-  useEffect(
-    () =>
-      api.on((msg) => {
+  useEffect(() => {
+    const off = api.on((msg) => {
         if (msg.type !== 'pet') return
         const c = msg.cue
         const now = Date.now()
@@ -225,13 +265,18 @@ export function Pet(): JSX.Element | null {
           case 'openChat':
             setChatOpen(true)
             break
-          case 'blur':
-            setChatOpen(false)
+          case 'cursor':
+            m.cursorX = c.x
+            m.cursorY = c.y
+            break
+          case 'idle':
+            fsmRef.current = { ...fsmRef.current, lastActivity: Math.max(fsmRef.current.lastActivity, now - c.seconds * 1000) }
             break
         }
-      }),
-    [dispatch]
-  )
+    })
+    void api.invoke('pet:ready')
+    return off
+  }, [dispatch])
   // ---------- chat focus & Esc ----------
   useEffect(() => {
     void api.invoke('pet:focus', chatOpen)
@@ -239,30 +284,15 @@ export function Pet(): JSX.Element | null {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') setChatOpen(false)
     }
+    // Clicking another app blurs our (focused) overlay: that's "click outside".
+    const onBlur = (): void => setChatOpen(false)
     addEventListener('keydown', onKey)
-    return () => removeEventListener('keydown', onKey)
-  }, [chatOpen])
-
-  // ---------- click-through: only the pet and its bubbles catch the mouse ----------
-  useEffect(() => {
-    const onMove = (e: MouseEvent): void => {
-      m.cursorX = e.clientX
-      m.cursorY = e.clientY
-      const now = Date.now()
-      // Any cursor movement counts as "user is around"; a sleeping pet wakes on the next tick.
-      if (now - lastPoke.current > 1000) {
-        lastPoke.current = now
-        fsmRef.current = { ...fsmRef.current, lastActivity: now }
-      }
-      const hit = !!down.current?.dragging || !!document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-hit]')
-      if (hit !== clickable.current) {
-        clickable.current = hit
-        void api.invoke('pet:clickable', hit)
-      }
+    addEventListener('blur', onBlur)
+    return () => {
+      removeEventListener('keydown', onKey)
+      removeEventListener('blur', onBlur)
     }
-    addEventListener('mousemove', onMove)
-    return () => removeEventListener('mousemove', onMove)
-  }, [m])
+  }, [chatOpen])
 
   // ---------- pointer: click / double-click / drag ----------
   const onPointerDown = (e: React.PointerEvent): void => {
@@ -279,6 +309,7 @@ export function Pet(): JSX.Element | null {
     m.cursorY = e.clientY
     if (!d.dragging && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) {
       d.dragging = true
+      void api.invoke('pet:hold', true) // stay clickable even if the cursor outruns the pet
       dispatch({ type: 'dragStart', now: Date.now() })
     }
   }
@@ -287,6 +318,7 @@ export function Pet(): JSX.Element | null {
     down.current = null
     if (!d) return
     if (d.dragging) {
+      void api.invoke('pet:hold', false)
       m.vy = 0
       dispatch({ type: 'dragEnd', now: Date.now() })
       return

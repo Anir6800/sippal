@@ -172,7 +172,7 @@ export function missedSummary(since: Date): void {
   }
   if (!items.length) return
   notify({ title: 'You missed…', body: items.join('\n'), onClick: () => showDashboard('schedule') })
-  petCue({ kind: 'say', text: `While you were away:\n${items.join('\n')}` })
+  petCue({ kind: 'alert', title: 'While you were away…', subtitle: items.join('\n'), timeoutMs: 60_000 })
 }
 
 // ---------- Lifecycle ----------

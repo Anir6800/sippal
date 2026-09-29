@@ -30,7 +30,8 @@ export function buildSystemPrompt(c: PromptContext): string {
 You manage their water intake, alarms and schedule by calling tools. Replies appear in a small speech bubble.
 
 NOW: ${c.now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, ${c.now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} local time.
-Current ISO: ${toLocalIso(c.now)}. Timezone: ${tz.name} (UTC${tz.offset}).
+Current ISO: ${toLocalIso(c.now)}
+Timezone: ${tz.name} (UTC${tz.offset})
 
 WATER TODAY: ${c.water.totalMl} / ${c.water.goalMl} ml. Default cup ${c.water.defaultCupMl} ml. Reminder every ${c.water.intervalMin} min.
 

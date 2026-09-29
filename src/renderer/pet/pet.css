@@ -26,13 +26,22 @@ body,
   transform-box: fill-box;
   transform-origin: 50% 100%;
 }
-.state-idle .pet-body,
-.state-wander .pet-body {
-  animation: breathe 3.2s ease-in-out infinite;
+/*
+ * Ambient idle/sleep motion runs in short bursts that Pet.tsx triggers (.blink every ~4.5 s,
+ * .breath every 4th time) instead of infinite loops. Every animated frame recomposites the whole
+ * full-screen transparent overlay, so idle cost is proportional to animated time.
+ */
+.pet.breath .state-idle .pet-body,
+.pet.breath .state-wander .pet-body,
+.pet.breath .state-sleep .pet-body {
+  animation: breathe 1.3s ease-in-out;
 }
 .pet-eyes {
   transform-origin: 50% 50%;
-  animation: blink 4.5s infinite;
+}
+.pet.blink .state-idle .pet-eyes,
+.pet.blink .state-wander .pet-eyes {
+  animation: blink 0.28s;
 }
 .pet-feet.walking .foot-l {
   animation: step 0.36s ease-in-out infinite alternate;
@@ -64,11 +73,8 @@ body,
   transform-origin: 20% 100%;
   animation: wave 0.9s ease-in-out infinite alternate;
 }
-.state-sleep .pet-body {
-  animation: breathe 5s ease-in-out infinite;
-}
-.pet-zzz {
-  animation: float 2.6s ease-in-out infinite;
+.pet.breath .pet-zzz {
+  animation: float 1.3s ease-in-out;
 }
 .state-dragged .pet-body {
   transform-origin: 50% 0%;
@@ -85,12 +91,7 @@ body,
   }
 }
 @keyframes blink {
-  0%,
-  94%,
-  100% {
-    transform: scaleY(1);
-  }
-  97% {
+  50% {
     transform: scaleY(0.1);
   }
 }

@@ -108,7 +108,7 @@ export function Bubble({ fsm, cue, settings, dispatch }: Props): JSX.Element | n
       body = (
         <>
           <p className="text-sm font-bold whitespace-pre-line">{a.title}</p>
-          {a.subtitle && <p className="text-xs opacity-80">{a.subtitle}</p>}
+          {a.subtitle && <p className="text-xs whitespace-pre-line opacity-80">{a.subtitle}</p>}
           <div className="mt-2 flex gap-1.5">
             {a.alarm ? (
               <>

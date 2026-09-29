@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { app } from 'electron'
 import { ApiError, GoogleGenAI, type Content } from '@google/genai'
 import { getApiKey } from '../secret'
 import { petCue } from '../bus'
@@ -16,7 +17,9 @@ const PENDING_TTL = 10 * 60_000
 
 function client(): { ai: GoogleGenAI; model: string } | null {
   const key = getApiKey()
-  return key ? { ai: new GoogleGenAI({ apiKey: key }), model: getSettings().model } : null
+  // SIPPAL_GEMINI_BASE_URL (dev only) points the SDK at a local fake server for end-to-end tests.
+  const baseUrl = app.isPackaged ? undefined : process.env.SIPPAL_GEMINI_BASE_URL
+  return key ? { ai: new GoogleGenAI({ apiKey: key, httpOptions: baseUrl ? { baseUrl } : undefined }), model: getSettings().model } : null
 }
 
 const NO_KEY: ChatReply = { ok: false, code: 'no_key', message: 'I need a Gemini API key before I can chat. Add one in Settings 🔑' }

@@ -9,6 +9,7 @@ function Ring({ value, goal }: { value: number; goal: number }): JSX.Element {
   return (
     <svg width="180" height="180" viewBox="0 0 180 180" className="shrink-0">
       <circle cx="90" cy="90" r={r} fill="none" strokeWidth="16" className="stroke-slate-200 dark:stroke-slate-700" />
+      {pct > 0 && (
       <circle
         cx="90"
         cy="90"
@@ -21,6 +22,7 @@ function Ring({ value, goal }: { value: number; goal: number }): JSX.Element {
         transform="rotate(-90 90 90)"
         style={{ transition: 'stroke-dasharray .6s ease' }}
       />
+      )}
       <text x="90" y="86" textAnchor="middle" className="fill-slate-800 text-2xl font-bold dark:fill-slate-100">
         {value}
       </text>

@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { BrowserWindow, screen, shell } from 'electron'
+import { BrowserWindow, powerMonitor, screen, shell } from 'electron'
 import { bus } from './bus'
 import icon from '../../resources/icon.png?asset'
 import type { BusMsg } from '@shared/types'
@@ -60,19 +60,52 @@ export function createPetWindow(): BrowserWindow {
   })
   pet.setAlwaysOnTop(true, 'screen-saver')
   pet.setVisibleOnAllWorkspaces(true)
-  pet.setIgnoreMouseEvents(true, { forward: true })
+  pet.setIgnoreMouseEvents(true)
+  setInterval(pollCursor, 100)
   pet.once('ready-to-show', applyPetVisibility)
-  pet.on('blur', () => sendTo(pet, { type: 'pet', cue: { kind: 'blur' } }))
   const fit = (): void => pet?.setBounds(overlayBounds())
   screen.on('display-metrics-changed', fit)
   screen.on('display-added', fit)
   screen.on('display-removed', fit)
+  pet.webContents.on('did-start-loading', () => (petReady = false))
   load(pet, 'pet')
   return pet
 }
 
-export function setPetClickable(clickable: boolean): void {
-  pet?.setIgnoreMouseEvents(!clickable, { forward: true })
+// ---------- click-through ----------
+/*
+ * The overlay ignores the mouse except over the pet and its bubbles. Main polls the cursor at
+ * 10 Hz against rectangles the renderer reports. (Using setIgnoreMouseEvents' `forward` option
+ * instead delivers every mouse move on the desktop to the overlay, and each one recomposites the
+ * full-screen transparent window — ~15% of a core while you use the mouse.)
+ */
+export interface HitRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+let hitRects: HitRect[] = []
+let hold = false // renderer holds clickability during a drag
+let clickable = false
+let trackCursor = false
+let polls = 0
+
+export const setHitRects = (r: HitRect[]): void => void (hitRects = r)
+export const setPetHold = (v: boolean): void => void (hold = v)
+export const setTrackCursor = (v: boolean): void => void (trackCursor = v)
+
+function pollCursor(): void {
+  if (!pet || !pet.isVisible()) return
+  const c = screen.getCursorScreenPoint()
+  const b = pet.getBounds()
+  const x = c.x - b.x
+  const y = c.y - b.y
+  const inside = hold || hitRects.some((r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h)
+  if (inside !== clickable) pet.setIgnoreMouseEvents(!(clickable = inside))
+  if (trackCursor) sendTo(pet, { type: 'pet', cue: { kind: 'cursor', x, y } })
+  // Every 10 s tell the pet how long the user has been idle (keyboard + mouse), for SLEEP.
+  if (++polls % 100 === 0) sendTo(pet, { type: 'pet', cue: { kind: 'idle', seconds: powerMonitor.getSystemIdleTime() } })
 }
 
 export function focusPet(focus: boolean): void {
@@ -139,7 +172,17 @@ function sendTo(win: BrowserWindow | null, msg: BusMsg): void {
   if (win && !win.isDestroyed()) win.webContents.send('bus', msg)
 }
 
+// Pet cues emitted before the pet UI has subscribed (e.g. the startup "You missed…") are queued.
+let petReady = false
+const queued: BusMsg[] = []
+
+export function markPetReady(): void {
+  petReady = true
+  queued.splice(0).forEach((m) => sendTo(pet, m))
+}
+
 bus.on('msg', (msg) => {
-  sendTo(pet, msg)
+  if (petReady || msg.type === 'changed') sendTo(pet, msg)
+  else queued.push(msg)
   if (msg.type === 'changed') sendTo(dash, msg)
 })
