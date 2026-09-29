@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { app } from 'electron'
-import { ApiError, GoogleGenAI, type Content } from '@google/genai'
+import { ApiError, GoogleGenAI, type Content, type GenerateContentResponse } from '@google/genai'
 import { getApiKey } from '../secret'
 import { logLine } from '../log'
 import { petCue } from '../bus'
@@ -16,11 +16,42 @@ import type { ChatReply } from '@shared/types'
 
 const PENDING_TTL = 10 * 60_000
 
-function client(): { ai: GoogleGenAI; model: string } | null {
+const FALLBACK_MODEL = 'gemini-3.5-flash'
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+type GenParams = Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'>
+
+/**
+ * Gemini regularly answers 503 "high demand" (and 429 per-model quota). Retry briefly, then fall
+ * back to an older Flash model, which has separate capacity and quota. Other errors throw at once.
+ */
+function client(): { model: string; generate: (p: GenParams) => Promise<{ r: GenerateContentResponse; model: string }> } | null {
   const key = getApiKey()
+  if (!key) return null
   // SIPPAL_GEMINI_BASE_URL (dev only) points the SDK at a local fake server for end-to-end tests.
   const baseUrl = app.isPackaged ? undefined : process.env.SIPPAL_GEMINI_BASE_URL
-  return key ? { ai: new GoogleGenAI({ apiKey: key, httpOptions: baseUrl ? { baseUrl } : undefined }), model: getSettings().model } : null
+  const ai = new GoogleGenAI({ apiKey: key, httpOptions: baseUrl ? { baseUrl } : undefined })
+  const model = getSettings().model
+  const models = model === FALLBACK_MODEL ? [model] : [model, FALLBACK_MODEL]
+  return {
+    model,
+    async generate(p) {
+      let last: unknown
+      for (const m of models)
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            return { r: await ai.models.generateContent({ ...p, model: m }), model: m }
+          } catch (e) {
+            last = e
+            const status = e instanceof ApiError ? e.status : 0
+            if (!(status >= 500 || status === 429)) throw e
+            logLine('[gemini] busy, retrying', m, status)
+            if (status === 429) break // quota won't recover in a second; try the fallback model
+            await sleep(700 * (attempt + 1))
+          }
+        }
+      throw last
+    }
+  }
 }
 
 const NO_KEY: ChatReply = { ok: false, code: 'no_key', message: 'I need a Gemini API key before I can chat. Add one in Settings 🔑' }
@@ -35,7 +66,7 @@ function detailOf(e: unknown): string {
     // not JSON
   }
   const cause = e instanceof Error && e.cause ? ` (${(e.cause as { code?: string }).code ?? String(e.cause)})` : ''
-  return (text + cause).replace(/AIza[0-9A-Za-z_-]{10,}/g, '[key]').slice(0, 220)
+  return (text + cause).replace(/AIza[0-9A-Za-z_-]{10,}|AQ\.[0-9A-Za-z_.-]{10,}/g, '[key]').slice(0, 220)
 }
 
 export function friendlyError(e: unknown): ChatReply & { ok: false } {
@@ -78,7 +109,7 @@ export async function sendMessage(text: string): Promise<ChatReply> {
       alarms: listAlarms(),
       water: { totalMl: t.totalMl, goalMl: t.goalMl, defaultCupMl: s.defaultCupMl, intervalMin: s.reminderIntervalMin }
     })
-    const r = await c.ai.models.generateContent({ model: c.model, contents: cs, config: { systemInstruction, tools: [{ functionDeclarations }] } })
+    const { r } = await c.generate({ contents: cs, config: { systemInstruction, tools: [{ functionDeclarations }] } })
     return { functionCalls: r.functionCalls, text: r.text, content: r.candidates?.[0]?.content }
   }
 
@@ -112,8 +143,7 @@ export async function transcribe(wavBase64: string): Promise<{ ok: true; text: s
   const c = client()
   if (!c) return { ok: false, message: 'Add a Gemini API key in Settings to use voice 🔑' }
   try {
-    const r = await c.ai.models.generateContent({
-      model: c.model,
+    const { r } = await c.generate({
       contents: [
         {
           role: 'user',
@@ -134,8 +164,11 @@ export async function testKey(): Promise<{ ok: boolean; message: string }> {
   const c = client()
   if (!c) return { ok: false, message: 'No key saved yet.' }
   try {
-    await c.ai.models.generateContent({ model: c.model, contents: 'Reply with the single word OK.' })
-    return { ok: true, message: `Key works with ${c.model} ✅` }
+    const { model } = await c.generate({ contents: 'Reply with the single word OK.' })
+    return {
+      ok: true,
+      message: model === c.model ? `Key works with ${model} ✅` : `Key works ✅ (${c.model} is overloaded right now, so ${model} answered; SipPal falls back automatically)`
+    }
   } catch (e) {
     return { ok: false, message: friendlyError(e).message }
   }
