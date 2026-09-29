@@ -35,6 +35,7 @@ export function buildTrayMenu(): void {
         ]
       },
       { type: 'separator' },
+      { label: 'Start with Windows', type: 'checkbox', checked: s.launchAtLogin, click: () => setSettings({ launchAtLogin: !s.launchAtLogin }) },
       { label: 'Quit SipPal', click: () => app.quit() }
     ])
   )

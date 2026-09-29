@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { app } from 'electron'
 import { ApiError, GoogleGenAI, type Content } from '@google/genai'
 import { getApiKey } from '../secret'
+import { logLine } from '../log'
 import { petCue } from '../bus'
 import { getSettings } from '../services/settings'
 import { listEvents } from '../services/events'
@@ -24,16 +25,37 @@ function client(): { ai: GoogleGenAI; model: string } | null {
 
 const NO_KEY: ChatReply = { ok: false, code: 'no_key', message: 'I need a Gemini API key before I can chat. Add one in Settings 🔑' }
 
+/** Google's own error text (the SDK puts the JSON body in the message), with anything key-like removed. */
+function detailOf(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e)
+  let text = raw
+  try {
+    text = (JSON.parse(raw.slice(raw.indexOf('{'))) as { error?: { message?: string } }).error?.message ?? raw
+  } catch {
+    // not JSON
+  }
+  const cause = e instanceof Error && e.cause ? ` (${(e.cause as { code?: string }).code ?? String(e.cause)})` : ''
+  return (text + cause).replace(/AIza[0-9A-Za-z_-]{10,}/g, '[key]').slice(0, 220)
+}
+
 export function friendlyError(e: unknown): ChatReply & { ok: false } {
   const status = e instanceof ApiError ? e.status : undefined
-  const msg = e instanceof Error ? e.message : String(e)
-  console.error('[gemini] request failed', status ?? '', msg.slice(0, 200))
-  if (status === 401 || status === 403 || (status === 400 && /api[_ ]?key/i.test(msg)))
-    return { ok: false, code: 'invalid_key', message: "That API key doesn't seem to work. Check it in Settings 🔑" }
-  if (status === 429) return { ok: false, code: 'rate_limit', message: "I'm being rate-limited (quota reached). Give it a minute, then retry ⏳" }
-  if (status === 404) return { ok: false, code: 'unknown', message: `Model "${getSettings().model}" wasn't found. Check the model name in Settings.` }
-  if (!status || status >= 500) return { ok: false, code: 'network', message: "I can't reach Gemini right now. Check your connection and retry 📡" }
-  return { ok: false, code: 'unknown', message: `Gemini returned an error (${status}). Please retry.` }
+  const detail = detailOf(e)
+  logLine('[gemini] request failed', status ?? 'no-status', detail)
+  const fail = (code: Extract<ChatReply, { ok: false }>['code'], message: string): ChatReply & { ok: false } => ({
+    ok: false,
+    code,
+    message: `${message}
+
+Details: ${status ? `${status} · ` : ''}${detail}`
+  })
+  if (status === 401 || status === 403 || (status === 400 && /api[_ ]?key/i.test(detail)))
+    return fail('invalid_key', "That API key doesn't seem to work. Check it in Settings 🔑")
+  if (status === 429) return fail('rate_limit', "I'm being rate-limited (quota reached). Give it a minute, then retry ⏳")
+  if (status === 404) return fail('unknown', `Model "${getSettings().model}" wasn't found. Check the model name in Settings.`)
+  if (status && status >= 500) return fail('server', 'Gemini is busy or having trouble right now. Please retry in a moment ⏳')
+  if (!status) return fail('network', "I can't reach Gemini right now. Check your connection and retry 📡")
+  return fail('unknown', `Gemini returned an error (${status}).`)
 }
 
 const pendingById = new Map<string, { calls: PendingCall[]; at: number }>()

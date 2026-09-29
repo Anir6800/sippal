@@ -60,6 +60,11 @@ export function SettingsPage(): JSX.Element {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-20">
+      <Card title="Startup">
+        <Toggle label="Start SipPal when Windows starts" checked={d.launchAtLogin} onChange={(v) => up('launchAtLogin', v)} />
+        <p className="mt-1 text-xs text-slate-400">SipPal starts quietly in the tray with the pet on your desktop. Applies to the installed app.</p>
+      </Card>
+
       <Card title="Profile">
         <Grid>
           <Field label="Name">
@@ -179,7 +184,7 @@ export function SettingsPage(): JSX.Element {
               </button>
             </div>
           </Field>
-          {keyMsg && <p className="text-sm">{keyMsg}</p>}
+          {keyMsg && <p className="text-sm whitespace-pre-wrap break-words">{keyMsg}</p>}
           {settings.hasApiKey && (
             <button type="button" className="text-xs text-rose-500 underline" onClick={() => void api.invoke('ai:setKey', { key: '' }).then(() => setKeyMsg('Key removed.'))}>
               Remove saved key
@@ -200,7 +205,6 @@ export function SettingsPage(): JSX.Element {
 
       <Card title="General">
         <Grid>
-          <Toggle label="Launch at login" checked={d.launchAtLogin} onChange={(v) => up('launchAtLogin', v)} />
           <Toggle label="Notification sound" checked={d.notificationSound} onChange={(v) => up('notificationSound', v)} />
           <Field label="Theme">
             <select className={inputCls} value={d.theme} onChange={(e) => up('theme', e.target.value as Draft['theme'])}>

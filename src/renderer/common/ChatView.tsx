@@ -111,14 +111,14 @@ export function ChatView({ compact, autoFocus }: Props): JSX.Element {
         )}
         {error && (
           <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
-            <p className="mb-2">{error.reply.message}</p>
+            <p className="mb-2 whitespace-pre-wrap break-words">{error.reply.message}</p>
             <div className="flex gap-2">
               {error.reply.code === 'no_key' || error.reply.code === 'invalid_key' ? (
                 <button onClick={() => void api.invoke('app:openDashboard', 'settings')} className="rounded-lg bg-rose-500 px-3 py-1 text-white">
                   Open Settings
                 </button>
               ) : (
-                (error.reply.code === 'network' || error.reply.code === 'rate_limit') && (
+                ['network', 'rate_limit', 'server'].includes(error.reply.code) && (
                   <button onClick={error.retry} className="rounded-lg bg-rose-500 px-3 py-1 text-white">
                     Retry
                   </button>

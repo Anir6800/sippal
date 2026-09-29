@@ -122,7 +122,7 @@ export interface PendingConfirmation {
 
 export type ChatReply =
   | { ok: true; text: string; pending: PendingConfirmation | null }
-  | { ok: false; code: 'no_key' | 'invalid_key' | 'rate_limit' | 'network' | 'unknown'; message: string }
+  | { ok: false; code: 'no_key' | 'invalid_key' | 'rate_limit' | 'network' | 'server' | 'unknown'; message: string }
 
 // ---------- Bus ----------
 export type Domain = 'water' | 'events' | 'alarms' | 'settings' | 'chat'

@@ -20,7 +20,8 @@ function applySettings(): void {
   const s = getSettings()
   nativeTheme.themeSource = s.theme
   setPetWanted(s.petVisible)
-  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: s.launchAtLogin })
+  // --hidden: a login launch starts quietly in the tray (wasOpenedAtLogin only works on macOS).
+  if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: s.launchAtLogin, args: ['--hidden'] })
   buildTrayMenu()
 }
 
@@ -46,7 +47,7 @@ function init(): void {
   powerMonitor.on('resume', scheduler.resume)
   watchFullscreen((busy) => setFullscreenBusy(busy && getSettings().hideInFullscreen))
 
-  if (!app.getLoginItemSettings().wasOpenedAtLogin) showDashboard('today')
+  if (!process.argv.includes('--hidden')) showDashboard('today')
 }
 
 // The app lives in the tray; closing windows never quits it.
