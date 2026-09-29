@@ -18,6 +18,7 @@ export function buildTrayMenu(): void {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: 'Open Dashboard', click: () => showDashboard() },
+      { label: 'Play a game 🎮', click: () => showDashboard('games') },
       { label: s.petVisible ? 'Hide pet' : 'Show pet', click: () => setSettings({ petVisible: !s.petVisible }) },
       { type: 'separator' },
       {

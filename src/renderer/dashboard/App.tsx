@@ -7,6 +7,8 @@ import { HistoryPage } from './HistoryPage'
 import { SchedulePage } from './SchedulePage'
 import { AlarmsPage } from './AlarmsPage'
 import { SettingsPage } from './SettingsPage'
+import { GamesPage } from './games/GamesPage'
+import type { GameId } from './games/shared'
 
 const TABS = [
   ['today', '💧', 'Today'],
@@ -14,14 +16,27 @@ const TABS = [
   ['schedule', '📅', 'Schedule'],
   ['alarms', '⏰', 'Alarms'],
   ['chat', '💬', 'Chat'],
+  ['games', '🎮', 'Games'],
   ['settings', '⚙️', 'Settings']
 ] as const
 type Tab = (typeof TABS)[number][0]
 
 export function App(): JSX.Element {
   const [tab, setTab] = useState<Tab>('today')
+  const [game, setGame] = useState<GameId>('chess')
+  const [gamesOpened, setGamesOpened] = useState(false)
   const settings = useStore((s) => s.settings)
-  useEffect(() => api.onNavigate((t) => TABS.some(([id]) => id === t) && setTab(t as Tab)), [])
+  // "games:chess" style targets come from the assistant's open_game tool.
+  useEffect(
+    () =>
+      api.onNavigate((t) => {
+        const [id, sub] = t.split(':')
+        if (TABS.some(([x]) => x === id)) setTab(id as Tab)
+        if (sub === 'chess' || sub === 'tictactoe') setGame(sub)
+      }),
+    []
+  )
+  useEffect(() => void (tab === 'games' && setGamesOpened(true)), [tab])
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
@@ -62,6 +77,12 @@ export function App(): JSX.Element {
           </div>
         )}
         {tab === 'settings' && <SettingsPage />}
+        {/* Kept mounted once opened so a game survives switching tabs. */}
+        {gamesOpened && (
+          <div className={tab === 'games' ? '' : 'hidden'}>
+            <GamesPage game={game} onGame={setGame} />
+          </div>
+        )}
       </main>
       <Toasts />
     </div>

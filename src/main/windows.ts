@@ -182,6 +182,7 @@ export function markPetReady(): void {
 }
 
 bus.on('msg', (msg) => {
+  if (msg.type === 'open') return showDashboard(msg.tab)
   if (petReady || msg.type === 'changed') sendTo(pet, msg)
   else queued.push(msg)
   if (msg.type === 'changed') sendTo(dash, msg)

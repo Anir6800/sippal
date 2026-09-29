@@ -14,6 +14,10 @@ all of it through natural conversation.
 - **Schedule.** Events with multiple reminders (e.g. 10 min before plus at the start) and daily, weekly or weekday recurrence.
 - **Missed reminders.** After sleep or a restart you get a single "You missed…" summary instead of a burst of alarms.
 - **Gemini assistant.** Uses function calling with 13 tools. Say "set a MERN stack meeting at 6", "move it to 7:30", "cancel all meetings on Friday" (deletes ask you to confirm first), "I drank a bottle of water" or "wake me up at 7 every weekday". Push-to-talk voice input and optional text-to-speech replies are included.
+- **Games.** Play **chess** and **tic-tac-toe** against Sip in the Games tab, or just say "let's play chess".
+  - Chess uses a built-in engine: alpha-beta search with quiescence and iterative deepening, ~1.6M positions/s. It has 3 difficulty levels, take-back, hints and a move list, and its move generation is perft-verified.
+  - Tic-tac-toe on Hard plays perfect minimax and can't be beaten.
+  - Sip reacts to every result.
 - **Stays out of the way.** The pet hides during full-screen apps, presentations and Zoom meetings. It lives in the system tray (with a pause-reminders option), auto-launch at login is optional, and it has light/dark themes.
 - **Your data stays local.** Everything is stored in SQLite, with JSON export/import and reset. The app works fully offline except for chat.
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { FunctionDeclaration } from '@google/genai'
-import { petCue } from '../bus'
+import { bus, petCue } from '../bus'
 import { createEvent, deleteEvent, getEvent, listEvents, updateEvent } from '../services/events'
 import { createAlarm, deleteAlarm, getAlarm, listAlarms, updateAlarm } from '../services/alarms'
 import { history, logWater, today } from '../services/water'
@@ -205,6 +205,14 @@ export const TOOLS = {
     run: (a) => {
       setSettings({ reminderIntervalMin: a.minutes })
       return { ok: true, interval_min: a.minutes, active_hours: `${getSettings().activeStart}-${getSettings().activeEnd}` }
+    }
+  }),
+  open_game: tool({
+    description: 'Open a game to play against Sip in the dashboard: chess or tic-tac-toe. Sip plays with a real game engine.',
+    args: z.object({ game: z.enum(['chess', 'tictactoe']) }),
+    run: (a) => {
+      bus.emit('msg', { type: 'open', tab: `games:${a.game}` })
+      return { ok: true, opened: a.game, note: 'The board is open in the dashboard; the user plays there.' }
     }
   }),
   snooze_reminders: tool({

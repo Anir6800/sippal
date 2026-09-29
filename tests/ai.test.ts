@@ -27,7 +27,7 @@ describe('migrations', () => {
 
 describe('tool declarations', () => {
   it('produce clean JSON schemas for every tool', () => {
-    expect(functionDeclarations).toHaveLength(13)
+    expect(functionDeclarations).toHaveLength(14)
     const create = functionDeclarations.find((f) => f.name === 'create_event')!
     const schema = create.parametersJsonSchema as { required: string[]; $schema?: string }
     expect(schema.required).toEqual(['title', 'start_iso'])

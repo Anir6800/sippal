@@ -49,7 +49,8 @@ export const requests = {
   'pet:focus': z.boolean(),
   'pet:contextMenu': none,
   'pet:thirstyIgnored': z.object({ level: z.number().int().min(0).max(10) }),
-  'app:openDashboard': z.enum(['today', 'history', 'schedule', 'alarms', 'chat', 'settings']).optional(),
+  'app:openDashboard': z.enum(['today', 'history', 'schedule', 'alarms', 'chat', 'games', 'settings']).optional(),
+  'games:result': z.object({ game: z.enum(['chess', 'tictactoe']), result: z.enum(['win', 'loss', 'draw']) }),
   'data:export': none,
   'data:import': none,
   'data:reset': none
@@ -95,6 +96,7 @@ export interface Responses {
   'pet:contextMenu': void
   'pet:thirstyIgnored': void
   'app:openDashboard': void
+  'games:result': void
   'data:export': { ok: boolean; message: string }
   'data:import': { ok: boolean; message: string }
   'data:reset': { ok: boolean; message: string }

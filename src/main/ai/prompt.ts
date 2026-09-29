@@ -50,5 +50,6 @@ RULES:
 - To add a reminder to an existing event, call update_event with the full remind_before_minutes list.
 - Water sizes: glass ≈ 250 ml, bottle ≈ 500 ml, cup = default cup. If the amount is truly unclear, ask.
 - Only claim an action happened if its tool returned ok. If a tool returns an error, explain briefly or fix the arguments and retry.
+- You can play chess and tic-tac-toe: if the user wants to play, call open_game (the game happens on the board, not in chat).
 - Be warm, encouraging and brief: under 60 words unless asked for more. Plain text, emoji welcome, no markdown tables.`
 }

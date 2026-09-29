@@ -138,4 +138,4 @@ export type PetCue =
   | { kind: 'cursor'; x: number; y: number }
   | { kind: 'idle'; seconds: number }
 
-export type BusMsg = { type: 'changed'; domain: Domain } | { type: 'pet'; cue: PetCue }
+export type BusMsg = { type: 'changed'; domain: Domain } | { type: 'pet'; cue: PetCue } | { type: 'open'; tab: string }

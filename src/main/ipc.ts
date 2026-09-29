@@ -10,6 +10,7 @@ import { createAlarm, deleteAlarm, listAlarms, updateAlarm } from './services/al
 import { clearChat, logReminder, recentMessages } from './services/chat'
 import { exportAll, importAll, notifyAll, wipe } from './services/data'
 import { hasApiKey, setApiKey } from './secret'
+import { petCue } from './bus'
 import { confirmPending, sendMessage, testKey, transcribe } from './ai/assistant'
 import { respondAlarm, snoozeWater, waterNotification } from './scheduler'
 import { focusPet, markPetReady, setHitRects, setPetHold, setTrackCursor, showDashboard } from './windows'
@@ -72,6 +73,15 @@ const handlers: Handlers = {
     if (p.level === 2) waterNotification('Still thirsty over here 💧', true)
   },
   'app:openDashboard': (p) => showDashboard(p),
+  'games:result': (p) => {
+    const name = p.game === 'chess' ? 'chess' : 'tic-tac-toe'
+    const lines = {
+      win: [`You beat me at ${name}! 🏆 Rematch?`, `Wow, you won! Great ${name} 👏`, 'Victory is yours! Celebrate with a sip 💧'],
+      loss: [`Good game! I win this ${name} round 😄`, 'Gotcha! Want a rematch? 💧', 'I won! Hydrate and try again 😉'],
+      draw: ['A draw! Evenly matched 🤝', "Nobody wins — let's call it a tie 🤝"]
+    }[p.result]
+    petCue({ kind: 'say', text: lines[Math.floor(Math.random() * lines.length)] })
+  },
   'data:export': async () => {
     const r = await dialog.showSaveDialog({ defaultPath: `sippal-backup-${new Date().toISOString().slice(0, 10)}.json`, filters: [{ name: 'JSON', extensions: ['json'] }] })
     if (r.canceled || !r.filePath) return { ok: false, message: 'Export cancelled.' }
