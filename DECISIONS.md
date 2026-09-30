@@ -29,9 +29,13 @@ Choices made without asking, and why.
 - **Chat history sent to Gemini is text only** (last N messages, default 20). Tool call details are stored in `chat_history.tool_calls_json` for reference but not replayed. The per-request system prompt already carries the current events, alarms and IDs.
 
 ## Full-screen detection
-- Uses a single long-lived hidden PowerShell process that polls `SHQueryUserNotificationState` every 3 s. This is the signal Windows itself uses to suppress toasts for games, full-screen video and presentations. No native modules are needed.
+- A single long-lived hidden PowerShell process checks the foreground window every 2 s, with no native modules. A window counts as full-screen if it covers its whole monitor, has no title bar and is not merely maximized (games, F11 browsers, video players). Windows' exclusive-D3D (3) and presentation-mode (4) states also count.
+- **Not used: `SHQueryUserNotificationState`'s "busy" (2).** On this machine (auto-hidden taskbar) it flips on and off every few seconds for ordinary *maximized* windows. Measured with the Claude app maximized, it read 2,2,2,5,5,2. That made the pet flicker and vanish for long stretches.
+- **Never counts:** the desktop and shell overlays (Alt+Tab/Task View, Start, Search, lock screen), which are also borderless and full-monitor, and SipPal's own windows.
+- **Debounce:** the pet hides only after two busy readings in a row (~4 s) and comes back on the first clear one.
 - **Meeting detection:** Zoom only, by checking for its `CptHost` process, which exists only during a meeting. Teams and Meet (browser) have no reliable cheap signal, so they're skipped.
-- **Self-detection bug found and fixed:** with an auto-hidden taskbar, the overlay covers the whole monitor, so Windows reported *our own* overlay as a full-screen app. SipPal hid itself, the signal cleared, it re-appeared, and the cycle repeated. Two fixes: the overlay is 1 px shorter than the work area, and readings are ignored while a SipPal window is in the foreground.
+- **Overlay height:** the overlay is 1 px shorter than the work area, so a topmost window exactly covering the monitor is never mistaken for a full-screen app.
+- **Quit crash (fixed):** the 10 Hz cursor poll kept running after the pet window was destroyed during quit and threw "Object has been destroyed" on every tick. It is now stopped on the window's `closed` event.
 
 ## Bugs found by testing (and fixed)
 - One-off events were never scheduled: the "infinite" search horizon (`8.64e15`) plus the reminder offset overflowed JS's maximum Date and became `Invalid Date`. A unit test caught it.

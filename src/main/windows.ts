@@ -61,7 +61,12 @@ export function createPetWindow(): BrowserWindow {
   pet.setAlwaysOnTop(true, 'screen-saver')
   pet.setVisibleOnAllWorkspaces(true)
   pet.setIgnoreMouseEvents(true)
-  setInterval(pollCursor, 100)
+  const poll = setInterval(pollCursor, 100)
+  // On quit the window is destroyed first; stop everything that would still touch it.
+  pet.on('closed', () => {
+    clearInterval(poll)
+    pet = null
+  })
   pet.once('ready-to-show', applyPetVisibility)
   const fit = (): void => pet?.setBounds(overlayBounds())
   screen.on('display-metrics-changed', fit)
