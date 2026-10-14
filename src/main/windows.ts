@@ -32,12 +32,15 @@ function load(win: BrowserWindow, page: 'pet' | 'dashboard'): void {
 }
 
 /**
- * Work area minus 1px: a topmost window that exactly covers the monitor (e.g. with an auto-hidden
- * taskbar) makes Windows report "full-screen app running", which would make us hide ourselves.
+ * The overlay covers only the bottom ~60% of the work area (min 560 px: pet + chat panel), never the
+ * whole monitor. A topmost window that covers the screen makes Windows believe a full-screen app is
+ * running (SHQueryUserNotificationState flips to "busy"); with an auto-hidden taskbar the taskbar then
+ * stays hidden and every app looks full-screen. Shrinking the overlay by 1 px was not enough.
  */
 const overlayBounds = (): Electron.Rectangle => {
   const wa = screen.getPrimaryDisplay().workArea
-  return { ...wa, height: wa.height - 1 }
+  const height = Math.min(wa.height, Math.max(560, Math.round(wa.height * 0.6)))
+  return { x: wa.x, y: wa.y + wa.height - height, width: wa.width, height }
 }
 
 export function createPetWindow(): BrowserWindow {

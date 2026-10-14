@@ -34,7 +34,7 @@ Choices made without asking, and why.
 - **Never counts:** the desktop and shell overlays (Alt+Tab/Task View, Start, Search, lock screen), which are also borderless and full-monitor, and SipPal's own windows.
 - **Debounce:** the pet hides only after two busy readings in a row (~4 s) and comes back on the first clear one.
 - **Meeting detection:** Zoom only, by checking for its `CptHost` process, which exists only during a meeting. Teams and Meet (browser) have no reliable cheap signal, so they're skipped.
-- **Overlay height:** the overlay is 1 px shorter than the work area, so a topmost window exactly covering the monitor is never mistaken for a full-screen app.
+- **Overlay height:** the overlay covers only the bottom ~60% of the work area (min 560 px). A topmost window spanning the monitor made Windows believe a full-screen app was running. With an auto-hidden taskbar, the taskbar then stayed hidden and every app looked full-screen. Making the overlay 1 px shorter was not enough. Measured with the pet visible and Chrome maximized, the full-screen flag read normal 20 out of 20 times after the change; before, it flipped. Trade-off: the pet can't be dragged into the top ~40% of the screen.
 - **Quit crash (fixed):** the 10 Hz cursor poll kept running after the pet window was destroyed during quit and threw "Object has been destroyed" on every tick. It is now stopped on the window's `closed` event.
 
 ## Bugs found by testing (and fixed)
