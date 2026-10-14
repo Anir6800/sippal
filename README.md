@@ -27,9 +27,17 @@
 
 ## Download
 
-**[⬇️ Download SipPal for Windows (SipPal-Setup-1.0.0.exe)](https://github.com/Anir6800/sippal/releases/latest)**
+<p align="center"><a href="https://github.com/Anir6800/sippal/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20%7C%20macOS%20%7C%20Linux-00C8FF?style=for-the-badge&logo=github" alt="Download"></a></p>
 
-Run the installer. If Windows SmartScreen warns, click **More info → Run anyway** (the app isn't code-signed).
+| Platform | File | First launch |
+| --- | --- | --- |
+| **Windows 10/11** | `SipPal-Setup-x.y.z.exe` | SmartScreen may warn: **More info → Run anyway** |
+| **macOS** (Apple Silicon) | `SipPal-x.y.z-mac-arm64.dmg` | Drag to Applications, then **right-click → Open** once |
+| **macOS** (Intel) | `SipPal-x.y.z-mac-x64.dmg` | Same as above |
+| **Linux** | `SipPal-x.y.z-linux-x86_64.AppImage` | `chmod +x SipPal-*.AppImage` then run it |
+
+The builds aren't code-signed yet, which is why each OS asks once. If macOS says the app "is damaged", run `xattr -cr /Applications/SipPal.app`.
+Full-screen and Zoom-meeting detection is Windows-only; everything else works on all three.
 
 ## Features
 

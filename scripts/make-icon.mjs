@@ -2,7 +2,7 @@
 import { deflateSync, crc32 } from 'node:zlib'
 import { writeFileSync, mkdirSync } from 'node:fs'
 
-const N = 256, SS = 4
+const N = 512, SS = 4
 const px = Buffer.alloc(N * N * 4)
 const cx = 0.5, cy = 0.62, r = 0.33, top = 0.06
 const inDrop = (x, y) => {

@@ -12,10 +12,14 @@ import { stopFullscreenWatch, watchFullscreen } from './fullscreen'
 // Dev only: a separate profile (e.g. demo data for screenshots) instead of the real one.
 if (!app.isPackaged && process.env.SIPPAL_USER_DATA) app.setPath('userData', process.env.SIPPAL_USER_DATA)
 
+// Linux needs this for the transparent pet overlay.
+if (process.platform === 'linux') app.commandLine.appendSwitch('enable-transparent-visuals')
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => showDashboard())
+  app.on('activate', () => showDashboard()) // macOS: clicking the Dock icon
   app.whenReady().then(init)
 }
 
