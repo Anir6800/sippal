@@ -216,6 +216,22 @@ export function SettingsPage(): JSX.Element {
         </Grid>
       </Card>
 
+      <Card title="About">
+        <p className="text-sm">
+          <b>SipPal</b> {__APP_VERSION__} · built by{' '}
+          <a href="https://www.qubticlabs.studio/" target="_blank" rel="noreferrer" className="font-semibold text-sky-500 hover:underline">
+            Qubtic Labs
+          </a>{' '}
+          — <i>Intelligence amplified by design.</i>
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Source code:{' '}
+          <a href="https://github.com/Anir6800/sippal" target="_blank" rel="noreferrer" className="hover:underline">
+            github.com/Anir6800/sippal
+          </a>
+        </p>
+      </Card>
+
       <Card title="Data">
         <div className="flex flex-wrap gap-2">
           <button className={ghostBtn} onClick={() => void data('data:export')}>

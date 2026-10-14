@@ -1,8 +1,11 @@
 {
   "name": "sippal",
-  "version": "1.0.0",
-  "description": "Hydration tracker with a desktop pet and a Gemini assistant",
-  "author": "Aniruddh",
+  "version": "1.1.0",
+  "description": "Windows hydration tracker with a charming desktop pet, alarms, schedule, a Gemini assistant and games. Built by Qubtic Labs.",
+  "author": {
+    "name": "Qubtic Labs",
+    "url": "https://www.qubticlabs.studio/"
+  },
   "main": "./out/main/index.js",
   "private": true,
   "scripts": {
@@ -83,6 +86,12 @@
       "target": "AppImage",
       "category": "Utility"
     },
-    "npmRebuild": false
+    "npmRebuild": false,
+    "copyright": "Copyright © 2026 Qubtic Labs"
+  },
+  "homepage": "https://github.com/Anir6800/sippal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anir6800/sippal.git"
   }
 }

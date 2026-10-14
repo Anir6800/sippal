@@ -5,3 +5,7 @@ declare global {
     sippal: SipPalApi
   }
 }
+
+declare global {
+  const __APP_VERSION__: string
+}

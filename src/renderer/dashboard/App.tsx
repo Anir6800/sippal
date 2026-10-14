@@ -56,7 +56,12 @@ export function App(): JSX.Element {
             {label}
           </button>
         ))}
-        <div className="mt-auto px-2 text-xs text-slate-400">{settings ? `Hi, ${settings.name} 👋` : ''}</div>
+        <div className="mt-auto space-y-2 px-2 text-xs text-slate-400">
+          <div>{settings ? `Hi, ${settings.name} 👋` : ''}</div>
+          <a href="https://www.qubticlabs.studio/" target="_blank" rel="noreferrer" className="block hover:text-sky-500">
+            Built by <span className="font-semibold text-sky-500">Qubtic Labs</span>
+          </a>
+        </div>
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto p-6">
         {tab === 'today' && <TodayPage />}

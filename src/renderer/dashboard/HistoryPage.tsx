@@ -15,7 +15,7 @@ function Bars({ data }: { data: DayTotal[] }): JSX.Element {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Daily water totals">
       <line x1={pad} x2={W} y1={goalY} y2={goalY} stroke="#22c55e" strokeDasharray="6 4" />
-      <text x={pad + 4} y={goalY - 4} className="fill-green-600 text-[10px]">
+      <text x={W - 2} y={goalY - 4} textAnchor="end" className="fill-green-600 text-[10px]">
         goal
       </text>
       {data.map((d, i) => {

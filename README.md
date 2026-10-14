@@ -1,8 +1,29 @@
-# SipPal 💧
+<div align="center">
 
-A Windows desktop hydration tracker with a charming animated desktop pet ("Sip", an original
-water-droplet character), custom alarms, a schedule, and a Gemini-powered assistant that manages
-all of it through natural conversation.
+<a href="https://www.qubticlabs.studio/"><img src=".github/assets/banner.svg" alt="SipPal by Qubtic Labs" width="100%"></a>
+
+[![Release](https://img.shields.io/github/v/release/Anir6800/sippal?color=00C8FF&style=for-the-badge)](https://github.com/Anir6800/sippal/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-4A90D9?style=for-the-badge&logo=windows)](https://github.com/Anir6800/sippal/releases/latest)
+[![Electron](https://img.shields.io/badge/Electron-44-47848F?style=for-the-badge&logo=electron)](https://www.electronjs.org/)
+[![Built by Qubtic Labs](https://img.shields.io/badge/Built%20by-Qubtic%20Labs-00C8FF?style=for-the-badge)](https://www.qubticlabs.studio/)
+
+**Built by [Qubtic Labs](https://www.qubticlabs.studio/) — *Intelligence amplified by design.***
+
+</div>
+
+## Meet Sip
+
+<p align="center"><img src=".github/assets/sip-moods.svg" alt="Sip's moods" width="100%"></p>
+
+## Screenshots
+
+| Today | History |
+| --- | --- |
+| ![Today](.github/assets/today.png) | ![History](.github/assets/history.png) |
+| **Chat with Sip** | **Play chess** |
+| ![Chat](.github/assets/pet-chat.png) | ![Chess](.github/assets/chess.png) |
+| **Schedule** | **Celebrate** |
+| ![Schedule](.github/assets/schedule.png) | ![Celebrate](.github/assets/pet-celebrate.png) |
 
 ## Download
 
@@ -26,12 +47,6 @@ Run the installer. If Windows SmartScreen warns, click **More info → Run anywa
   - Sip reacts to every result.
 - **Stays out of the way.** The pet hides during full-screen apps, presentations and Zoom meetings. It lives in the system tray (with a pause-reminders option), auto-launch at login is optional, and it has light/dark themes.
 - **Your data stays local.** Everything is stored in SQLite, with JSON export/import and reset. The app works fully offline except for chat.
-
-## Screenshots
-
-| Pet | Dashboard | Chat |
-| --- | --- | --- |
-| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
 
 ## Setup
 
@@ -85,3 +100,11 @@ tests/        Vitest
 - **Swapping in sprite sheets.** Write a component with the `PetRendererProps` contract (`pet/DropletRenderer.tsx`) and assign it to `Renderer` in `pet/Pet.tsx`.
 
 See [PLAN.md](PLAN.md) for milestones and [DECISIONS.md](DECISIONS.md) for the reasoning behind the design choices.
+
+---
+
+<div align="center">
+
+Made with 💙 by **[Qubtic Labs](https://www.qubticlabs.studio/)** · AI products, consulting & production systems
+
+</div>

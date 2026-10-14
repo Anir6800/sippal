@@ -9,6 +9,9 @@ import { getSettings } from './services/settings'
 import * as scheduler from './scheduler'
 import { stopFullscreenWatch, watchFullscreen } from './fullscreen'
 
+// Dev only: a separate profile (e.g. demo data for screenshots) instead of the real one.
+if (!app.isPackaged && process.env.SIPPAL_USER_DATA) app.setPath('userData', process.env.SIPPAL_USER_DATA)
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {

@@ -10,6 +10,7 @@ export default defineConfig({
   preload: { plugins: [externalizeDepsPlugin()], resolve: { alias: shared } },
   renderer: {
     resolve: { alias: shared },
+    define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '1.1.0') },
     plugins: [react(), tailwindcss()],
     build: {
       rollupOptions: {
