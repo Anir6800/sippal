@@ -4,6 +4,12 @@ A Windows desktop hydration tracker with a charming animated desktop pet ("Sip",
 water-droplet character), custom alarms, a schedule, and a Gemini-powered assistant that manages
 all of it through natural conversation.
 
+## Download
+
+**[⬇️ Download SipPal for Windows (SipPal-Setup-1.0.0.exe)](https://github.com/Anir6800/sippal/releases/latest)**
+
+Run the installer. If Windows SmartScreen warns, click **More info → Run anyway** (the app isn't code-signed).
+
 ## Features
 
 - **Desktop pet overlay.** Sip lives in a transparent, click-through, always-on-top overlay. It breathes, blinks, wanders along the bottom of the screen, sleeps (Zzz) during quiet hours or when you're away, and can be dragged around (it dangles, then drops and squishes).
